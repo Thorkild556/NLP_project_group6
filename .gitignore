@@ -2,10 +2,6 @@
 __pycache__/
 *.py[codz]
 *$py.class
-.idea
-.virtual_documents
-anaconda_projects
-s.ps1
 
 # C extensions
 *.so
