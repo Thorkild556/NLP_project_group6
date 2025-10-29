@@ -2,6 +2,9 @@
 __pycache__/
 *.py[codz]
 *$py.class
+.idea
+.virtual_documents
+anaconda_projects
 
 # C extensions
 *.so
