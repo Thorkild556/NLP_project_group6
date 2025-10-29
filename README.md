@@ -9,11 +9,16 @@ We have decided to analyze the TL-DR Dataset and build a model that would unders
 
 ## Setup
 
-1. Download conda and set up the project, or you can setup venv. (either works)
-2. Once done please install [uv](https://docs.astral.sh/uv/), you can do so by `conda install conda-forge::uv` for conda  else `pip install uv`
-3. then simply `uv sync` would install the required packages
-4. Please make sure to install torch separately with this command: ` uv pip install torch torchvision torchaudio accelerate --index-url https://download.pytorch.org/whl/cu121` or any other that would allow us to use CUDA.
-5. Make sure to do: `uv sync` when someone adds new package
+1. you can create conda env: `conda env create -f environment.yml` or use your own.
+2. Please make sure to install torch separately with this command: ` uv pip install torch torchvision torchaudio accelerate --index-url https://download.pytorch.org/whl/cu121` or any other that would allow us to use CUDA.
+
+### Update Packages
+if you want to share the new packages 
+you can try:  
+**powershell**: `conda env export --no-builds | findstr -v "prefix:" > environment.yml`  
+**bash**: `conda env export --no-builds | grep -v "prefix:" > environment.yml`
+
+and rest of us could this `conda env update -f environment.yml --prune`
 
 ## How to Use it ?
 
