@@ -5,6 +5,7 @@ __pycache__/
 .idea
 .virtual_documents
 anaconda_projects
+s.ps1
 
 # C extensions
 *.so
