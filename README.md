@@ -9,16 +9,12 @@ We have decided to analyze the TL-DR Dataset and build a model that would unders
 
 ## Setup
 
-1. you can create conda env: `conda env create -f environment.yml` or use your own.
-2. Please make sure to install torch separately with this command: ` uv pip install torch torchvision torchaudio accelerate --index-url https://download.pytorch.org/whl/cu121` or any other that would allow us to use CUDA.
+1. Create Python Venv and Activate it
+2. Install poetry: `pip install poetry`
+3. Then simply do `poetry install`
 
 ### Update Packages
-if you want to share the new packages 
-you can try:  
-**powershell**: `conda env export --no-builds | findstr -v "prefix:" > environment.yml`  
-**bash**: `conda env export --no-builds | grep -v "prefix:" > environment.yml`
-
-and rest of us could this `conda env update -f environment.yml --prune`
+you can add from this [add command](https://python-poetry.org/docs/cli/#add).
 
 ## How to Use it ?
 
