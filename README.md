@@ -5,7 +5,7 @@ This is our repository for the **_Group 6_** Course Project for the Course: Natu
 Dataset picked: [TL-DR](https://huggingface.co/datasets/trl-lib/tldr)
 
 ## Where to find analysis
-You can find the initial analysis we did for the TL;DR dataset inside the lab/ExploreTLDR.ipynb. the other notebooks are for testing the data pipeline for our project and has nothing to do with the analysis of project milestone p2
+You can find the initial analysis we did for the TL;DR dataset inside the lab/ExploreTLDR.ipynb. The other notebooks are for testing the data pipeline for our project and has nothing to do with the analysis of project milestone p2
 
 ## Abstract
 With this project we aim to contribute with a new method for information extraction using youtube video transcripts. Our goal is to create a framework that takes in a prompt, fetches information from youtube videos, and returns compressed information that aims to answer the prompt and makes references to the videos. For the creation of this framework we first plan on using the TL;DR dataset + a custom dataset with youtube transcript and wanted outputs for model finetuning. The goal is to then have a summary of all the videos that is more in line with human language and information dissemination. This is as more youtube videos could take more perspectives and nuances into account than the more precise and concise information that might be contained in something like a wikipedia page.
