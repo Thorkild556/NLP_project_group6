@@ -50,7 +50,8 @@ Model evaluation will be done on a seperate test sample of the dataset that we c
 
 1. Create Python Venv and Activate it
 2. Install poetry: `pip install poetry`
-3. Then simply do `poetry install`
+3. before you start installation of the packages you might need to install: [Rust](https://rustup.rs/) you can skip it if already installed (it is required by bert-score package)
+4. Then simply do `poetry install`
 
 ### Update Packages
 you can add from this [add command](https://python-poetry.org/docs/cli/#add).
