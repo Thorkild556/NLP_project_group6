@@ -6,6 +6,7 @@ __pycache__/
 .virtual_documents
 anaconda_projects
 s.ps1
+*.csv
 
 # C extensions
 *.so
