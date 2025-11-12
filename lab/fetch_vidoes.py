@@ -51,7 +51,7 @@ class ExtractVideos:
         _p = []
         for prompt in file.read_text().split(","):
             _p.append(prompt.strip())
-        __p = pd.DataFrame(_p, columns=("Prompt", ))
+        __p = pd.DataFrame(_p, columns=("Prompt",))
         __p["fetched"] = False
         try:
             __p.to_sql("Prompts", self.connection)
@@ -138,6 +138,7 @@ class ExtractVideos:
             "SELECT video_key, title FROM Videos WHERE NOT transcript_fetched",
             self.connection
         )
+        is_not_done = not self.requests.empty
 
         for idx in self.requests.index:
             v_k = self.requests.loc[idx, "video_key"]
@@ -145,7 +146,9 @@ class ExtractVideos:
 
             for attempt in range(1, retries + 1):
                 try:
-                    value_to_save = self.transcript_api.fetch(v_k).to_raw_data()
+                    value_to_save = self.transcript_api.fetch(v_k, languages=["en", "en-GB", "en-US", "en-CA", "en-IN",
+                                                                              "en-AU", "en-NZ", "en-ZA",
+                                                                              "en-IE"]).to_raw_data()
                     frame = pd.DataFrame(value_to_save)
                     frame["video_key"] = v_k
 
@@ -169,10 +172,14 @@ class ExtractVideos:
                     logger.info(f"Fetched transcripts for {v_k}")
                     break
 
-                except Exception as error:
+                except Exception as e:
+                    if "Subtitles are disabled for this video" in str(e) or "Could not retrieve a transcript" in str(e):
+                        logger.warning("No subtitles available for {}, skipping.", v_k)
+                        break
+
                     wait_time = base_wait * (2 ** (attempt - 1))
                     logger.warning(
-                        f"[Attempt {attempt}/{retries}] Failed to fetch transcript for '{title}' ({v_k}): {error}"
+                        f"[Attempt {attempt}/{retries}] Failed to fetch transcript for '{title}' ({v_k}): {e}"
                     )
 
                     if attempt < retries:
@@ -183,9 +190,11 @@ class ExtractVideos:
                             f"❌ Giving up after {retries} attempts for '{title}' ({v_k})"
                         )
                         break
+        return is_not_done
 
 
 if __name__ == "__main__":
     with ExtractVideos() as extractor:
         extractor.extract_prompts()
-        extractor.extract_transcripts()
+        while extractor.extract_transcripts():
+            logger.info("Trying to extract the transcripts again...")
