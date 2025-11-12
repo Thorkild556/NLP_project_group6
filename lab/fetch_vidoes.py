@@ -3,25 +3,62 @@ from dotenv import load_dotenv
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
 from os import getenv
+from youtube_transcript_api.proxies import WebshareProxyConfig
 from requests.models import PreparedRequest
 from requests import get
+from time import sleep
 from concurrent.futures import ThreadPoolExecutor
+from youtube_transcript_api import YouTubeTranscriptApi
+from loguru import logger
 from threading import Lock
+from sqlite3 import connect
+from pathlib import Path
+import scrapetube
 
 load_dotenv()
 
-saved_file = 'VideoResults#1.csv'
-cols = ("region_code", "video_key", "title")
+
+def raw_data_to_single_text(raw_data):
+    texts = "".join(i.replace("\n", " ") + " \n" for i in raw_data)
+    return "POST: " + texts
+
+
+def format_df(title, raw_data):
+    return "TITLE: " + title + "\n\n" + raw_data_to_single_text(raw_data)
 
 
 class ExtractVideos:
     api_key = getenv('API_KEY')
-    url = 'https://www.googleapis.com/youtube/v3/videos'
-    total_videos_per_region = 1_200 // 6
+    data = Path(__file__).parent.parent / "data"
+    url = 'https://www.googleapis.com/youtube/v3/search'
+    db_path = data / "saved_videos.db"
+    cols = ("prompt", "video_key", "title")
+    videos_per_prompt = 4
 
     def __init__(self):
-        self.videos = []
+        self.connection = connect(str(self.db_path))
         self.lock = Lock()
+        self.requests = []
+        self.transcript_api = YouTubeTranscriptApi(
+            proxy_config=WebshareProxyConfig(
+                proxy_username=getenv('P_U'),
+                proxy_password=getenv('P_P'),
+            )
+        )
+
+    def __enter__(self):
+        file = self.data / "queries.txt"
+        _p = []
+        for prompt in file.read_text().split(","):
+            _p.append(prompt.strip())
+        __p = pd.DataFrame(_p, columns=("Prompt", ))
+        __p["fetched"] = False
+        try:
+            __p.to_sql("Prompts", self.connection)
+        except Exception:
+            ...
+        self.requests = pd.read_sql("SELECT Prompt from Prompts where not fetched", self.connection).Prompt.values
+        return self
 
     def add_key(self, params):
         return {"key": self.api_key, **params}
@@ -32,57 +69,123 @@ class ExtractVideos:
         captured_value = parse_qs(parsed_url.query)['v'][0]
         return captured_value
 
-    def extract(self):
-        pd.DataFrame(columns=cols).to_csv(saved_file, columns=cols, index=False)
-        with ThreadPoolExecutor(max_workers=5) as executor:
-            for region_code in (
-                'US',
-                'AU', 'GB', 'CA', 'NZ', 'IE'
-            ):
-                executor.submit(self.fetch_top_videos, region_code)
-
-    def fetch_top_videos(self, region_code):
-        code = ''
-        for _ in range(self.total_videos_per_region):
-            if _ and not code:
-                print("STOPPING HERE")
-                break
-
-            url = 'https://www.googleapis.com/youtube/v3/videos'
-            p = {
-                'chart': 'mostPopular',
+    def extract_prompt(self, prompt):
+        with connect(str(self.db_path)) as conn:
+            params = self.add_key({
+                'q': prompt,
                 'part': 'snippet',
-                'regionCode': region_code,
-                'maxResults': 50,
+                'maxResults': self.videos_per_prompt,
                 'relevanceLanguage': 'en',
                 'fields': 'nextPageToken,items(id,snippet(title))'
-            }
-            if code:
-                p['pageToken'] = code
-
-            params = self.add_key(p)
+            })
             req = PreparedRequest()
-            req.prepare_url(url, params)
+            req.prepare_url(self.url, params)
 
             try:
                 resp = get(req.url)
                 if not resp.ok:
-                    print("ERROR: ", resp.text)
-                    break
+                    logger.warning("Failed to fetch this request: {} due to {}", prompt, resp.text)
+                    return
 
                 _resp = resp.json()
-                code = _resp.get('nextPageToken', '')
+                rows = [
+                    (prompt, v["id"]['videoId'], v["snippet"]["title"]) for v in _resp.get('items', [])
+                ]
 
-                rows = [(region_code, v["id"], v["snippet"]["title"]) for v in _resp.get('items', [])]
                 with self.lock:
-                    pd.DataFrame(rows, columns=cols).to_csv(saved_file, index=False, mode='a', header=False)
-                    print(f"✅ {region_code}: +{len(rows)}")
+                    pd.DataFrame(rows, columns=self.cols).to_sql("Videos", conn, if_exists="append", index=False)
+                    conn.execute(f'UPDATE Prompts SET fetched = TRUE where prompt = "{prompt}"')
+                    conn.commit()
+
             except Exception as error:
-                print(error)
-                break
+                logger.exception("Failed to fetch the request: {} due to {}", prompt, error)
+                return
+
+    def extract_prompt_through_scraping(self, prompt):
+        rows = []
+        with connect(str(self.db_path)) as conn:
+            try:
+                for i, video in enumerate(scrapetube.get_search(prompt)):
+                    if i >= self.videos_per_prompt:
+                        break
+                    title = video.get('title', {}).get('runs', [{}])[0].get('text', 'No title')
+                    video_id = video['videoId']
+                    rows.append((prompt, video_id, title))
+
+                with self.lock:
+                    frame = pd.DataFrame(rows, columns=self.cols)
+                    frame["transcript_fetched"] = False
+                    frame["transcript"] = ''
+                    frame.to_sql("Videos", conn, if_exists="append", index=False)
+                    logger.info("Fetched {} videos for the prompt: {}", len(rows), prompt)
+                    conn.execute(f'UPDATE Prompts SET fetched = TRUE where prompt = "{prompt}"')
+                    conn.commit()
+
+            except Exception as error:
+                logger.exception("Failed to fetch the request: {} due to {}", prompt, error)
+                return
+
+    def extract_prompts(self):
+        with ThreadPoolExecutor(max_workers=6) as executor:
+            for request in self.requests:
+                executor.submit(self.extract_prompt_through_scraping, request)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        ...
+        self.connection.close()
+
+    def extract_transcripts(self, retries=3, base_wait=2):
+        self.requests = pd.read_sql(
+            "SELECT video_key, title FROM Videos WHERE NOT transcript_fetched",
+            self.connection
+        )
+
+        for idx in self.requests.index:
+            v_k = self.requests.loc[idx, "video_key"]
+            title = self.requests.loc[idx, "title"]
+
+            for attempt in range(1, retries + 1):
+                try:
+                    value_to_save = self.transcript_api.fetch(v_k).to_raw_data()
+                    frame = pd.DataFrame(value_to_save)
+                    frame["video_key"] = v_k
+
+                    formatted_text = format_df(title, frame.text.values)
+
+                    query = """
+                        UPDATE Videos 
+                        SET transcript_fetched = TRUE, transcript = ?
+                        WHERE video_key = ?;
+                    """
+                    self.connection.execute(query, (formatted_text, v_k))
+
+                    frame.to_sql(
+                        "VideoTranscriptsWithStamps",
+                        self.connection,
+                        index=False,
+                        if_exists="append"
+                    )
+
+                    self.connection.commit()
+                    logger.info(f"Fetched transcripts for {v_k}")
+                    break
+
+                except Exception as error:
+                    wait_time = base_wait * (2 ** (attempt - 1))
+                    logger.warning(
+                        f"[Attempt {attempt}/{retries}] Failed to fetch transcript for '{title}' ({v_k}): {error}"
+                    )
+
+                    if attempt < retries:
+                        logger.info(f"Retrying in {wait_time}s...")
+                        sleep(wait_time)
+                    else:
+                        logger.error(
+                            f"❌ Giving up after {retries} attempts for '{title}' ({v_k})"
+                        )
+                        break
+
 
 if __name__ == "__main__":
-    ExtractVideos().extract()
+    with ExtractVideos() as extractor:
+        extractor.extract_prompts()
+        extractor.extract_transcripts()
