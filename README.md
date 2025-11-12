@@ -5,7 +5,7 @@ This is our repository for the **_Group 6_** Course Project for the Course: Natu
 Dataset picked: [TL-DR](https://huggingface.co/datasets/trl-lib/tldr)
 
 ## Where to find analysis
-You can find the initial analysis we did for the TL;DR dataset inside the lab/ExploreTLDR.ipynb. the other notebooks are for testing the data pipeline for our project and has nothing to do with the analysis of project milestone p2
+You can find the initial analysis we did for the TL;DR dataset inside the lab/ExploreTLDR.ipynb. The other notebooks are for testing the data pipeline for our project and has nothing to do with the analysis of project milestone p2
 
 ## Abstract
 With this project we aim to contribute with a new method for information extraction using youtube video transcripts. Our goal is to create a framework that takes in a prompt, fetches information from youtube videos, and returns compressed information that aims to answer the prompt and makes references to the videos. For the creation of this framework we first plan on using the TL;DR dataset + a custom dataset with youtube transcript and wanted outputs for model finetuning. The goal is to then have a summary of all the videos that is more in line with human language and information dissemination. This is as more youtube videos could take more perspectives and nuances into account than the more precise and concise information that might be contained in something like a wikipedia page.
@@ -56,6 +56,8 @@ Model evaluation will be done on a seperate test sample of the dataset that we c
 3. before you start installation of the packages you might need to install: [Rust](https://rustup.rs/) you can skip it if already installed (it is required by bert-score package)
 4. Then simply do `poetry install`
 
+
+## Only for the data pipeline testing (not part of P2)
 ### Update Packages
 you can add from this [add command](https://python-poetry.org/docs/cli/#add).
 
@@ -63,19 +65,3 @@ you can add from this [add command](https://python-poetry.org/docs/cli/#add).
 
 if you want to use the lab notebooks please follow the files inside the `lab/`
 you can maybe download them and run it in colab. we would be having many more folders as we go for final application.
-
-## Lab Files
-
-Following are the files and what they are for:
-
-### ExploreTLDR.ipynb
-
-In this file we would be analyzing the TL-DR Dataset and see for any patterns, we have plotted and transformed datasets. you can give it a read for more details.
-
-### ForGettingAVideoDetails.ipynb
-
-In this file we would be seeing how we could fetch the data for a youtube video and what can we fetch a video like video details and its transcripts.
-
-### GuidelinesForProject-Google.ipynb
-
-In order to start with [ForGettingAVideoDetails.ipynb](#forgettingavideodetailsipynb) you would need to create a project in the Google Cloud for accessing Youtube Data API. so follow these steps documented here.
