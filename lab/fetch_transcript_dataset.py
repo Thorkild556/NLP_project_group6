@@ -180,7 +180,7 @@ class ExtractVideos:
         fallback = fallback or bool(getenv("FALLBACK"))
 
         self.requests = pd.read_sql(
-            "SELECT distinct video_key, title FROM Videos WHERE has_subs and NOT transcript_fetched",
+            "SELECT video_key, title FROM Videos WHERE has_subs and NOT transcript_fetched",
             self.connection
         )
         is_not_done = not self.requests.empty
