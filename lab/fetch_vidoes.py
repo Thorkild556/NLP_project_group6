@@ -112,6 +112,7 @@ class ExtractVideos:
                 with self.lock:
                     frame = pd.DataFrame(rows, columns=self.cols)
                     frame["transcript_fetched"] = False
+                    frame["has_subs"] = True
                     frame["transcript"] = ''
                     frame.to_sql("Videos", conn, if_exists="append", index=False)
                     logger.info("Fetched {} videos for the prompt: {}", len(rows), prompt)
@@ -179,7 +180,7 @@ class ExtractVideos:
         fallback = fallback or bool(getenv("FALLBACK"))
 
         self.requests = pd.read_sql(
-            "SELECT video_key, title FROM Videos WHERE NOT transcript_fetched",
+            "SELECT video_key, title FROM Videos WHERE has_subs and NOT transcript_fetched",
             self.connection
         )
         is_not_done = not self.requests.empty
@@ -229,6 +230,10 @@ class ExtractVideos:
                 except Exception as e:
                     if "Subtitles are disabled for this video" in str(e):
                         logger.warning("No subtitles available for {}, skipping.", v_k)
+                        self.connection.execute("""UPDATE Videos 
+                                           SET has_subs = FALSE
+                                           WHERE video_key = ?;""", (v_k, ))
+                        self.connection.commit()
                         break
 
                     wait_time = base_wait * (2 ** (attempt - 1))
