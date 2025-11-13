@@ -3,14 +3,16 @@ from dotenv import load_dotenv
 from urllib.parse import urlparse
 from urllib.parse import parse_qs
 from os import getenv
-from youtube_transcript_api.proxies import WebshareProxyConfig
 from requests.models import PreparedRequest
 from requests import get
 from time import sleep
 from concurrent.futures import ThreadPoolExecutor
 from youtube_transcript_api import YouTubeTranscriptApi
 from loguru import logger
+from yt_dlp import YoutubeDL
 from threading import Lock
+from tempfile import TemporaryDirectory
+from json import load
 from sqlite3 import connect
 from pathlib import Path
 import scrapetube
@@ -39,12 +41,7 @@ class ExtractVideos:
         self.connection = connect(str(self.db_path))
         self.lock = Lock()
         self.requests = []
-        self.transcript_api = YouTubeTranscriptApi(
-            proxy_config=WebshareProxyConfig(
-                proxy_username=getenv('P_U'),
-                proxy_password=getenv('P_P'),
-            )
-        )
+        self.transcript_api = YouTubeTranscriptApi()
 
     def __enter__(self):
         file = self.data / "queries.txt"
@@ -133,7 +130,54 @@ class ExtractVideos:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.connection.close()
 
-    def extract_transcripts(self, retries=3, base_wait=2):
+    def fetch_transcript_yt_dlp(self, v_k):
+        logger.info("Fetching the transcripts for video_key: {}", v_k)
+        ydl_opts = {
+            "skip_download": True,
+            "writesubtitles": True,
+            "subtitleslangs": ["en", "en-GB", "en-US"],
+            "writeautomaticsub": True,
+            "cookiefile": str(self.data / "cookies.txt"),
+            "subtitlesformat": "json3",
+            "sleep_interval_subtitles": 1,
+            "quiet": True,
+            "ejs_use_node": True,
+            "ejs_skip": False,
+        }
+        if getenv('OXY_PROXY'):
+            ydl_opts['proxy'] = getenv('OXY_PROXY')
+
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            ydl_opts["outtmpl"] = str(temp_path / "%(id)s.%(ext)s")
+
+            with YoutubeDL(ydl_opts) as ydl:
+                ydl.download([v_k])
+
+            json_files = list(temp_path.glob("*.json3"))
+            if not json_files:
+                raise ValueError("Subtitles are disabled for this video")
+
+            # Load JSON3 and extract plain text
+            with open(json_files[0], "r", encoding="utf-8") as f:
+                data = load(f)
+
+            transcript = []
+            for entry in data['events']:
+                start = entry.get("tStartMs", 0) / 1000
+                duration = entry.get("dDurationMs", 0) / 1000
+                text = "".join(seg.get("utf8", "") for seg in entry.get("segs", [])).replace("\n", " ").strip()
+                if text:
+                    transcript.append({
+                        "text": text,
+                        "start": start,
+                        "duration": duration
+                    })
+            return transcript
+
+    def extract_transcripts(self, fallback=False, retries=3, base_wait=2):
+        fallback = fallback or bool(getenv("FALLBACK"))
+
         self.requests = pd.read_sql(
             "SELECT video_key, title FROM Videos WHERE NOT transcript_fetched",
             self.connection
@@ -146,9 +190,19 @@ class ExtractVideos:
 
             for attempt in range(1, retries + 1):
                 try:
-                    value_to_save = self.transcript_api.fetch(v_k, languages=["en", "en-GB", "en-US", "en-CA", "en-IN",
-                                                                              "en-AU", "en-NZ", "en-ZA",
-                                                                              "en-IE"]).to_raw_data()
+                    if fallback:
+                        value_to_save = self.fetch_transcript_yt_dlp(v_k)
+                    else:
+                        logger.error(
+                            "We are resorting to the transcript youtube transcript API we are not recommended to spam this else we might get our IP banned")
+                        value_to_save = self.transcript_api.fetch(v_k,
+                                                                  languages=["en", "en-GB", "en-US", "en-CA", "en-IN",
+                                                                             "en-AU", "en-NZ", "en-ZA",
+                                                                             "en-IE"]).to_raw_data()
+                    if not value_to_save:
+                        logger.warning("#No subtitles available for {}, skipping.", v_k)
+                        break
+
                     frame = pd.DataFrame(value_to_save)
                     frame["video_key"] = v_k
 
@@ -173,7 +227,7 @@ class ExtractVideos:
                     break
 
                 except Exception as e:
-                    if "Subtitles are disabled for this video" in str(e) or "Could not retrieve a transcript" in str(e):
+                    if "Subtitles are disabled for this video" in str(e):
                         logger.warning("No subtitles available for {}, skipping.", v_k)
                         break
 
@@ -196,5 +250,4 @@ class ExtractVideos:
 if __name__ == "__main__":
     with ExtractVideos() as extractor:
         extractor.extract_prompts()
-        while extractor.extract_transcripts():
-            logger.info("Trying to extract the transcripts again...")
+        extractor.extract_transcripts(True)
