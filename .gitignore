@@ -13,6 +13,7 @@ s.ps1
 # Distribution / packaging
 .Python
 build/
+*cookies.txt
 develop-eggs/
 *.csv
 dist/
