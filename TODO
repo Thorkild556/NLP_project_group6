@@ -1,0 +1,12 @@
+TL;DR dataset
+- [ ] Downsample the dataset.
+- [ ] perform TF-IDF and group by 3-nearest-neighbor
+- [ ] Format the dataset such that it has the prepended strings
+
+Custom dataset
+- [ ] Use LLM to autogenerate the Summarizations on our custom dataset
+
+Model finetuning
+- [ ] have 2 copies of the same model
+- [ ] finetune 1 model on the formated TL;DR
+- [ ] finetune both models on the Custom dataset
