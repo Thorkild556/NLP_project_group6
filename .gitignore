@@ -10,6 +10,7 @@ s.ps1
 
 # C extensions
 *.so
+*.db
 
 # Distribution / packaging
 .Python
