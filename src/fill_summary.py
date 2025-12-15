@@ -8,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 from itertools import islice
 
-from lab.ask_llm import OpenAIClient
+from src.ask_llm import OpenAIClient
 
 
 def batched(iterable, n, *, strict=False):
