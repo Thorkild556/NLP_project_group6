@@ -8,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 from itertools import islice
 
-from lab.ask_llm import OpenAIClient
+from src.ask_llm import OpenAIClient
 
 
 def batched(iterable, n, *, strict=False):
@@ -68,8 +68,7 @@ class FillSummary(OpenAIClient):
                 """
                 SELECT v.prompt, v.video_key, v.title, v.transcript
                 FROM Videos v
-                         left join PromptResults p on v.prompt = p."SearchPrompt"
-                WHERE p."SearchPrompt" is NULL
+                where v.prompt not in (select "SearchPrompt" from PromptResults)
                   and v.transcript_fetched
                   and v.transcript is NOT NULL
                 """,
@@ -100,8 +99,10 @@ class FillSummary(OpenAIClient):
         self.save_this.append((prompt, ask_like_this, keys, result_of_prompt))
 
     def save_results(self):
-        pd.DataFrame(self.save_this, columns=("SearchPrompt", "AgentPrompt", "Keys", "Response")).to_sql('PromptResults', self.connection,
-                                                                                    index=False, if_exists='append')
+        pd.DataFrame(self.save_this, columns=("SearchPrompt", "AgentPrompt", "Keys", "Response")).to_sql(
+            'PromptResults', self.connection,
+            index=False, if_exists='append')
+        self.save_this.clear()
 
 
 #
