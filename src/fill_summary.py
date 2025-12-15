@@ -7,7 +7,6 @@ from sqlite3 import connect
 from pathlib import Path
 import pandas as pd
 from itertools import islice
-
 from src.ask_llm import OpenAIClient
 
 
@@ -25,7 +24,7 @@ def generate_for_row(index, row):
     return f"""
 {
     row.transcript
-    .replace("TITLE:", f"TITLE_OF_VIDEO_RESULT_{index + 1}")
+    .replace("TITLE", f"TITLE_OF_VIDEO_RESULT_{index + 1}")
     .replace("POST", f"TRANSCRIPT_OF_VIDEO_RESULT_{index + 1}")
     }
 """
@@ -93,10 +92,14 @@ class FillSummary(OpenAIClient):
             self.save_results()
 
     def ask_llm(self, rows, prompt):
-        keys = dumps(rows.video_key.to_list())
-        ask_like_this = fill_prompt(rows, prompt).strip()
-        result_of_prompt = self.parse_response(self.ask(ask_like_this))
-        self.save_this.append((prompt, ask_like_this, keys, result_of_prompt))
+        try:
+            keys = dumps(rows.video_key.to_list())
+            ask_like_this = fill_prompt(rows, prompt).strip()
+            response = self.ask(ask_like_this)
+            result_of_prompt = self.parse_response(response)
+            self.save_this.append((prompt, ask_like_this, keys, result_of_prompt))
+        except Exception as e:
+            logger.exception(f"Error processing prompt: {prompt}", exc_info=e)
 
     def save_results(self):
         pd.DataFrame(self.save_this, columns=("SearchPrompt", "AgentPrompt", "Keys", "Response")).to_sql(
