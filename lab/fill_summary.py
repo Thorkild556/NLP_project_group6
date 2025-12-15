@@ -68,8 +68,8 @@ class FillSummary(OpenAIClient):
                 """
                 SELECT v.prompt, v.video_key, v.title, v.transcript
                 FROM Videos v
-                         left join PromptResults p on v.prompt = p.prompt
-                WHERE p.prompt is NULL
+                         left join PromptResults p on v.prompt = p."SearchPrompt"
+                WHERE p."SearchPrompt" is NULL
                   and v.transcript_fetched
                   and v.transcript is NOT NULL
                 """,
@@ -90,10 +90,8 @@ class FillSummary(OpenAIClient):
                 for r in request:
                     executor.submit(self.ask_llm, self.requests.loc[r], r)
             logger.info(f"Finished batch: {idx + 1}")
-            sleep(2)
-            break
-
-        self.save_results()
+            sleep(1.5)
+            self.save_results()
 
     def ask_llm(self, rows, prompt):
         keys = dumps(rows.video_key.to_list())
