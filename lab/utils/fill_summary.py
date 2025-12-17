@@ -4,48 +4,14 @@ from time import sleep
 from concurrent.futures import ThreadPoolExecutor
 from loguru import logger
 from sqlite3 import connect
-from pathlib import Path
 import pandas as pd
-from itertools import islice
-from src.ask_llm import OpenAIClient
-
-
-def batched(iterable, n, *, strict=False):
-    if n < 1:
-        raise ValueError('n must be at least one')
-    iterator = iter(iterable)
-    while batch := tuple(islice(iterator, n)):
-        if strict and len(batch) != n:
-            raise ValueError('batched(): incomplete batch')
-        yield batch
-
-
-def generate_for_row(index, row):
-    return f"""
-{
-    row.transcript
-    .replace("TITLE", f"TITLE_OF_VIDEO_RESULT_{index + 1}")
-    .replace("POST", f"TRANSCRIPT_OF_VIDEO_RESULT_{index + 1}")
-    }
-"""
-
-
-def fill_prompt(rows: pd.DataFrame, prompt: str):
-    videos_text = "\n".join(
-        generate_for_row(i, row) for i, row in enumerate(rows.itertuples(index=False))
-    )
-
-    return f"""USER PROMPT: {prompt}
-VIDEO TRANSCRIPTS :-
-{videos_text}
-""".strip()
-
+from lab.utils.ask_llm import OpenAIClient
+from lab.utils.batch_utils import batched, fill_prompt, data_folder
 
 class FillSummary(OpenAIClient):
     api_key = getenv('API_KEY')
-    data = Path(__file__).parent.parent / "data"
     url = 'https://www.googleapis.com/youtube/v3/search'
-    db_path = data / "saved_videos.db"
+    db_path = data_folder / "saved_videos.db"
     videos_per_prompt = 4
 
     def __init__(self):
@@ -93,6 +59,8 @@ class FillSummary(OpenAIClient):
 
     def ask_llm(self, rows, prompt):
         try:
+            if type(rows) is not pd.DataFrame:
+                rows = pd.DataFrame([rows.values.tolist()], columns=list(rows.index))
             keys = dumps(rows.video_key.to_list())
             ask_like_this = fill_prompt(rows, prompt).strip()
             response = self.ask(ask_like_this)
