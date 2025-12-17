@@ -23,4 +23,4 @@ def fix_colab_widgets(ipynb_path, output_path=None):
     print(f"Fixed notebook saved as: {output_path}")
 
 # Example usage
-fix_colab_widgets("CalculateLossThreshold.ipynb")
+fix_colab_widgets("FineTuneCustomDataset.ipynb")
