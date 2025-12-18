@@ -217,3 +217,10 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+*llama3.2-3b-qlora-summary/
+
+*final-summary.zip
+*fine_tuned_with_cs.zip
+*final-summary
+*fine_tuned_with_cs
