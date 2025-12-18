@@ -35,6 +35,8 @@ share/python-wheels/
 *.egg
 MANIFEST
 data/
+*llama3.2-3b-qlora-summary/
+model/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
