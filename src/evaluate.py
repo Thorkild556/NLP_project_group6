@@ -6,7 +6,7 @@ os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 def evaluate(generations, grounds, device='cpu', batch_size=32):
     from bert_score import BERTScorer
 
-    scorer = BERTScorer(model_type='bert-base-uncased', lang='en', device='cpu')
+    scorer = BERTScorer(model_type='facebook/bart-large', device='cpu')
     P, R, F1 = scorer.score(generations, grounds)
 
     return P, R, F1
