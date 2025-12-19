@@ -3,11 +3,17 @@ from transformers import (
     Trainer,
     PreTrainedTokenizerBase
 )
-from typing import Any
+from typing import Any, Optional
 from datasets import Dataset
 
 
-def configure_trainer(output_dir: str, num_train_epochs=1) -> TrainingArguments:
+def configure_trainer(output_dir: str, num_train_epochs: Optional[int] = 1) -> TrainingArguments:
+    """
+    Configures the Training Arguments for our fine-tuning
+    :param output_dir: saves the model at this directory (saves cache but not the output)
+    :param num_train_epochs: number of epoches for training (default: 1)
+    :return: Training Arguments that can be used in Trainer
+    """
     print("\n[6/8] Configuring training...")
     training_args = TrainingArguments(
         output_dir=output_dir,
@@ -48,6 +54,12 @@ def configure_trainer(output_dir: str, num_train_epochs=1) -> TrainingArguments:
 
 
 def print_args(train_dataset: Dataset, training_args: TrainingArguments) -> None:
+    """
+    prints the important args we passed to the Trainer
+    :param train_dataset: train dataset for training
+    :param training_args: Training Args
+    :return: None (Just prints the results)
+    """
     print("✓ Training configuration:")
     print(
         f"  - Effective batch size: {training_args.per_device_train_batch_size * training_args.gradient_accumulation_steps}")
@@ -57,6 +69,11 @@ def print_args(train_dataset: Dataset, training_args: TrainingArguments) -> None
 
 
 def print_train_progress(trainer: Trainer) -> Any:
+    """
+    Starts the Training but also small helper function to print these nicly
+    :param trainer: Trainer Object
+    :return: None
+    """
     # Start training
     print("\n[8/8] Starting training...")
     print("=" * 60)
@@ -70,7 +87,15 @@ EXPORT_TLDR_FINE_TUNED = "./llama3.2-3b-qlora-summary"
 EXPORT_TLDR_CS_FINE_TUNED = "./final-summary"
 EXPORT_CS_FINE_TUNED = "./llama3.2-3b-qlora-summary"
 
+
 def export_model(trainer: Trainer, tokenizer: PreTrainedTokenizerBase, path: str) -> None:
+    """
+    Exports the Model we have fine-tuned, we also save the Tokenizer
+    :param trainer: Trainer Object
+    :param tokenizer: tokenizer
+    :param path: save at this path
+    :return: None
+    """
     # Save final model
     print("\n" + "=" * 60)
     print("TRAINING COMPLETE")

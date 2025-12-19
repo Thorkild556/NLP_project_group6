@@ -1,10 +1,17 @@
 import json
 from pathlib import Path
+from typing import Optional
 
-# we were getting rendering errors when uploading the notebook to the GitHub (the one we downloaded from colab)
-# please run this script to avoid such error
 
-def fix_colab_widgets(ipynb_path, output_path=None):
+def fix_colab_widgets(ipynb_path: str, output_path: Optional[str] = None) -> None:
+    """
+    we were getting rendering errors when uploading the notebook to the GitHub (the one we downloaded from colab)
+     please run this script to avoid such error
+
+    :param ipynb_path: path for the notebook to be fixed
+    :param output_path: save the fix at this path (if none at the same folder but named with suffix _fixed)
+    :return: None
+    """
     ipynb_path = Path(ipynb_path)
 
     if output_path is None:
@@ -25,5 +32,6 @@ def fix_colab_widgets(ipynb_path, output_path=None):
 
     print(f"Fixed notebook saved as: {output_path}")
 
-# Example usage
-fix_colab_widgets("../lab/fine_tune_models.ipynb")
+
+if __name__ == "__main__":
+    fix_colab_widgets(")../lab/fine_tune_models.ipynb")

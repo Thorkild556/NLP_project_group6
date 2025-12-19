@@ -1,10 +1,23 @@
 from transformers import PreTrainedTokenizerBase, PreTrainedModel
 from peft import PeftModel, PeftMixedModel
+from typing import List, Tuple
 from datasets import Dataset
 import torch
 
 
-def linearly_infer_from(model: PreTrainedModel, tokenizer: PreTrainedTokenizerBase, sample_results: Dataset):
+def linearly_infer_from(model: PreTrainedModel, tokenizer: PreTrainedTokenizerBase, sample_results: Dataset) -> List[
+    Tuple[str, str]]:
+    """
+    for every sample, we first tokenize the input (after applying the chat template) and then
+    proceed to feed to model when then generates the output, and we then decode the output
+    and save both the prompt message and the output
+
+    it worked with the system with less GPU RAM but took 1.5 hrs more time than expected.
+    :param model: model object (Fine-Tuned Model)
+    :param tokenizer: Tokenizer Object
+    :param sample_results: List of test sample's input.
+    :return: List of Prompt Message, Output
+    """
     model.eval()
     base_outputs = []
     for base_msg in sample_results:
@@ -49,8 +62,24 @@ def linearly_infer_from(model: PreTrainedModel, tokenizer: PreTrainedTokenizerBa
     return base_outputs
 
 
-def batch_infer_from(model: PeftModel | PeftMixedModel, tokenizer: PreTrainedTokenizerBase, sample_results: Dataset,
-                     batch: int = 4):
+def batch_infer_from(
+        model: PeftModel | PeftMixedModel, tokenizer: PreTrainedTokenizerBase, sample_results: Dataset,
+        batch: int = 4
+) -> List[Tuple[str, str]]:
+    """
+        for every sample, we first tokenize the input (after applying the chat template) and then
+        proceed to feed to model when then generates the output, and we then decode the output
+        and save both the prompt message and the output
+
+        the difference from previous function was that this function batches the inputs so it can
+        process n inputs parallely in the expense of more RAM
+
+        :param batch: number of inputs to process parallely
+        :param model: model object (Fine-Tuned Model)
+        :param tokenizer: Tokenizer Object
+        :param sample_results: List of test sample's input.
+        :return: List of Prompt Message, Output
+    """
     model.eval()
     cs_outputs = []
     batch_size = batch  # increase if GPU allows
