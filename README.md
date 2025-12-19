@@ -1,6 +1,6 @@
 # NLP Group Project - YouTube Information Extraction 
 
-This is our repository for the **_Group 6_** Course Project for the Course: Natural Language Processing. All of our important notebooks are located in the lab/ folder.
+This is our repository for the **_Group 6_** Course Project for the Course: Natural Language Processing. All of our important notebooks are located in the [`lab/`](lab/) folder.
 
 Dataset picked: [TL-DR](https://huggingface.co/datasets/trl-lib/tldr)
 
