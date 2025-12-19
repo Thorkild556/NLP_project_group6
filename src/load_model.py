@@ -44,7 +44,8 @@ def load_model(model_name=BASE_MODEL) -> PreTrainedModel:
     return model
 
 
-def lora_config_for(model: PreTrainedModel, pretrained_path: Optional[str] = None, for_training=True) -> PeftModel | PeftMixedModel:
+def lora_config_for(model: PreTrainedModel, pretrained_path: Optional[str] = None,
+                    for_training=True) -> PeftModel | PeftMixedModel:
     was_pretrained = pretrained_path is not None
 
     print("\n[4/8] Preparing model for QLoRA...")
@@ -143,3 +144,8 @@ def prep_data_collector(tokenizer: PreTrainedTokenizerBase) -> DataCollatorForLa
     )
 
     return data_collator
+
+
+# helper function to count the tokens for every samples
+def count_bart_tokens(tokenizer: PreTrainedTokenizerBase, text: str) -> int:
+    return len(tokenizer.encode(text, add_special_tokens=True))
