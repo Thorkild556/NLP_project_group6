@@ -19,21 +19,17 @@ The contribution we are aiming to achieve, is to provide a new method for inform
 Apart from using the TL;DR, we will also be constructing an additional dataset that specifically matches multiple youtube transcripts, merging the information into a single summary. We will construct this dataset by having a larger language model (GPT 5.1) generate summaries that takes the nuances of each of 2-4 videos into account and puts out a wanted summary. We will have to pre-prompt it with the precise instructions that will make it output the type of summary we want. In this way after using the TL;DR we will be using a kind of distilation of our summary model making it specifically good at this exact summary task. This would be good as we want the model to have some different properties like referencing which video says what and say when contradictions happen.
 
 ## Methods 
-### Model training and pipeline creation 
+### Model training 
 To achieve the goal framework, we will be using a pretrained model (Llama 3.2, 3B, 8-bit), as it has some language understanding, as it is already a pretrained seq2seq text generation model. Using this model we will first be fine-tuning it on the, formatted post and TL;DR pairs from the reddit TL;DR dataset. This will finetune the model for multiple text summarization. Now our model will have multiple text summary capabilities, which we expect will make transfer learning into our specific summarization task easier.
 
 Using the custom additional dataset, we want to further finetune our summary model. This will make the model more specific for our task. This way we have created the main model that our framwork is build upon.
-
-For the implementaion of our full framework, the interface will be simple. The user will ask a question, the question is then prompted to youtube as a youtube query. The api will then fetch the transcripts of the top 4 videos. The transcripts will then be tokenized and fed into the model which should then generate the summary, which is then returned back to the user together with the links to the videoes. The links are for if the user wants more information.
-
-This is the very base of our idea which, can potentially be improoved upon. If time allows, we would like to further improve the framework by making another model that takes in a natural language question and then produces a youtube search query, that finds videos that answers this question. This would be different from the user having to formulate the youtube search query them self, as youtube search queries are not neccesarily always posed as a question using natural language. Youtube already does this to some degree, but it would be a small quality of life improvement making it easier to interact with the framework. 
 
 ### Model evaluation
 Model evaluation will be done on a seperate test sample of the dataset that we created as it is the only dataset that has the seq2seq properties that we want the model to have. The evaluation metrics used will be BERT score between the actual generation of the model and the wanted text generation as defined by either us or the larger model as described in the "aditional dataset section". We will be using BERT score instead of classical measures since we do not neccesarily care about whether the exact text is the same but whether the semantic meaning of the generation is close to the message we want the model to generate. 
 
 ## A summary of the updates/changes since P2
 
-Instead of using the raw TL;DR we decided to make a version that is closer alligned with the gold standard we are trying to achieve. Furthermore, to make sure that this process does actually make sense we also changed the model evaluation to further compare it to a baseline model and a model, only fine-tuned on the custom "gold standard" data-set. We used the a Tukey's statistical test to compare the differences of their respective bert-scores
+Instead of using the raw TL;DR we decided to make a version that is closer alligned with the gold standard we are trying to achieve as explained in the report. Furthermore, to make sure that this "transfer learning" process does actually make sense we also changed the model evaluation to further compare it to a baseline model and a model, only fine-tuned on the custom "gold standard" data-set. We used the a Tukey's statistical test to compare the differences of their respective bert-scores.
 
 # Contributions:
 
