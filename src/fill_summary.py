@@ -5,8 +5,8 @@ from concurrent.futures import ThreadPoolExecutor
 from loguru import logger
 from sqlite3 import connect
 import pandas as pd
-from lab.utils.ask_llm import OpenAIClient
-from lab.utils.batch_utils import batched, fill_prompt, data_folder
+from src.utils.ask_llm import OpenAIClient
+from src.utils.batch_utils import batched, fill_prompt, data_folder
 
 class FillSummary(OpenAIClient):
     api_key = getenv('API_KEY')
