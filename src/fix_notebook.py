@@ -1,6 +1,9 @@
 import json
 from pathlib import Path
 
+# we were getting rendering errors when uploading the notebook to the GitHub (the one we downloaded from colab)
+# please run this script to avoid such error
+
 def fix_colab_widgets(ipynb_path, output_path=None):
     ipynb_path = Path(ipynb_path)
 
@@ -23,4 +26,4 @@ def fix_colab_widgets(ipynb_path, output_path=None):
     print(f"Fixed notebook saved as: {output_path}")
 
 # Example usage
-fix_colab_widgets("fine_tune_with_tldr_and_custom_dataset.ipynb")
+fix_colab_widgets("../lab/fine_tune_models.ipynb")
