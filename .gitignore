@@ -224,3 +224,4 @@ __marimo__/
 *fine_tuned_with_cs.zip
 *final-summary
 *fine_tuned_with_cs
+!data/instructions.txt
