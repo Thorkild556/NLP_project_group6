@@ -31,42 +31,15 @@ This is the very base of our idea which, can potentially be improoved upon. If t
 ### Model evaluation
 Model evaluation will be done on a seperate test sample of the dataset that we created as it is the only dataset that has the seq2seq properties that we want the model to have. The evaluation metrics used will be BERT score between the actual generation of the model and the wanted text generation as defined by either us or the larger model as described in the "aditional dataset section". We will be using BERT score instead of classical measures since we do not neccesarily care about whether the exact text is the same but whether the semantic meaning of the generation is close to the message we want the model to generate. 
 
-## A summary of the updates from P2
+## A summary of the updates/changes since P2
 
-Instead of using the raw TL;DR we decided to make a version that is closer alligned with the gold standard we are trying to achieve. Furthermore, to make sure that this process does actually make sense we also compare it to a baseline model and a model, only fine-tuned on the custom "gold standard" data-set. We used the a Tukey's statistical test to compare the differences of their respective bert-scores
+Instead of using the raw TL;DR we decided to make a version that is closer alligned with the gold standard we are trying to achieve. Furthermore, to make sure that this process does actually make sense we also changed the model evaluation to further compare it to a baseline model and a model, only fine-tuned on the custom "gold standard" data-set. We used the a Tukey's statistical test to compare the differences of their respective bert-scores
 
-## Proposed timeline & internal milestones
+# Contributions:
 
-14th november: The api and data import should be ready and useable
+#### Thorkild Kappel:
+Thorkild contributed with how the system should be designed in order to achieve the goal we set out to do. He wrote the code for the preprocessing and formatting of the TL;DR data as well as the final analysis and evaluation of the models. He co-wrote the code for model finetuning together with Rahul. Thorkild also wrote everything in the report, as well as the apendix equations, except for the introduction and motivation. However, everyone read the paper through.
 
-21th november: Model should be fully finetuned on the TL:DR data
+#### Rahul
 
-28th november: Creation of the custom data set should be finished.
-
-5th december: Last class and the overall code is done and the model is finetuned
-
-12th december: All code is done and only paper writing is left
-
-19th december: Hand in project
-
-## Questions for instructor:
-- Where can we access the cloud computing resources and how does it work?
-
-## Setup of the project
-
-1. Create Python Venv and Activate it
-2. Install poetry: `pip install poetry`
-3. before you start installation of the packages you might need to install: [Rust](https://rustup.rs/) you can skip it if already installed (it is required by bert-score package)
-4. Then simply do `poetry install`
-
-
-## Only for the data pipeline testing (not part of P2)
-### Update Packages
-you can add from this [add command](https://python-poetry.org/docs/cli/#add).
-
-## How to Use it ?
-
-if you want to use the lab notebooks please follow the files inside the `lab/`
-you can maybe download them and run it in colab. we would be having many more folders as we go for final application.
-
-# P3:
+#### Jolin
