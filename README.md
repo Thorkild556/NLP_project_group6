@@ -6,9 +6,6 @@ Dataset picked: [TL-DR](https://huggingface.co/datasets/trl-lib/tldr)
 
 # P2 updated for P3:
 
-## Where to find analysis
-You can find the initial analysis we did for the TL;DR dataset inside the lab/ExploreTLDR.ipynb. The other notebooks are for testing the data pipeline for our project and has nothing to do with the analysis of project milestone p2
-
 ## Abstract
 With this project we aim to contribute with a new method for information extraction using youtube video transcripts. Our goal is to create a framework that takes in a prompt, fetches information from youtube videos, and returns compressed information that aims to answer the prompt and makes references to the videos. For the creation of this framework we first plan on using the TL;DR dataset + a custom dataset with youtube transcript and wanted outputs for model finetuning. The TL;DR will be formatted to be more alligned with the custom dataset. The goal is to then create a model that can generate a summary of multiple youtube videos. The intention of this is that this can take more perspectives and nuances into account than the more concise information that might be contained eg. in a single page of information or a single video. In the project we test 3 different models to test which methods works best for the task to be solved. One baseline model with instructions, another finetuned on a custom gold standard data-set and the last one tuned on a reformatted TL;DR data-set, as well as the custom data-set. The TL;DR dataset is used for the purpose that it has more data and we might be able to exploit this by using the concept of transfer learning.
 
