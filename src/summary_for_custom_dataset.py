@@ -9,6 +9,11 @@ from src.utils.ask_llm import OpenAIClient
 from src.utils.batch_utils import batched, fill_prompt, data_folder
 
 class FillSummary(OpenAIClient):
+    """
+    FillSummary is a data pipeline where we utlize the threads to multi-request foundry's agent API
+    to fetch the summaries of YouTube videos
+
+    """
     api_key = getenv('API_KEY')
     url = 'https://www.googleapis.com/youtube/v3/search'
     db_path = data_folder / "saved_videos.db"
@@ -27,6 +32,10 @@ class FillSummary(OpenAIClient):
         return self
 
     def fetch(self):
+        """
+        we fetch the pending requests from the sqlite db we maintained for the videos
+        :return:
+        """
         q = "SELECT prompt, video_key, title, transcript FROM Videos WHERE transcript_fetched and transcript is NOT NULL"
         try:
             self.requests = pd.read_sql(

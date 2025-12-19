@@ -44,7 +44,7 @@ def load_model(model_name=BASE_MODEL) -> PreTrainedModel:
     return model
 
 
-def lora_config_for(model: PreTrainedModel, pretrained_path: Optional[str] = None) -> PeftModel | PeftMixedModel:
+def lora_config_for(model: PreTrainedModel, pretrained_path: Optional[str] = None, for_training=True) -> PeftModel | PeftMixedModel:
     was_pretrained = pretrained_path is not None
 
     print("\n[4/8] Preparing model for QLoRA...")
@@ -58,7 +58,7 @@ def lora_config_for(model: PreTrainedModel, pretrained_path: Optional[str] = Non
         model = PeftModel.from_pretrained(
             model,
             pretrained_path,
-            is_trainable=True  # to continue training
+            is_trainable=for_training  # to continue training
         )
         model.train()
 
