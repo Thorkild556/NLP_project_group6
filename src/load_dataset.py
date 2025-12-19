@@ -40,3 +40,6 @@ def print_sample(train_dataset) -> None:
     print(f"  - Attention tokens: {sum(sample['attention_mask'])} tokens")
     print(f"  - Truncated: {'Yes' if len(sample['input_ids']) == 4096 else 'No'}")
 
+
+CS_JSON = "custom_dataset.jsonl"
+TL_DR_JSON = "proc_tldr.jsonl"
