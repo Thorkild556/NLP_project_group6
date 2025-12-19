@@ -68,6 +68,7 @@ def print_train_progress(trainer: Trainer) -> Any:
 
 EXPORT_TLDR_FINE_TUNED = "./llama3.2-3b-qlora-summary"
 EXPORT_TLDR_CS_FINE_TUNED = "./final-summary"
+EXPORT_CS_FINE_TUNED = "./llama3.2-3b-qlora-summary"
 
 def export_model(trainer: Trainer, tokenizer: PreTrainedTokenizerBase, path: str) -> None:
     # Save final model

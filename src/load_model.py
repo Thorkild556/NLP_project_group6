@@ -4,9 +4,8 @@ from transformers import (
 )
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training, PeftModel, PeftMixedModel
 import torch
-from transformers.models.auto.modeling_auto import _BaseModelWithGenerate
 from transformers.models.auto.tokenization_auto import AutoTokenizer
-from transformers import PreTrainedTokenizerBase, BatchEncoding
+from transformers import PreTrainedTokenizerBase, BatchEncoding, PreTrainedModel
 from typing import Optional, Callable
 from datasets import Dataset
 
@@ -25,7 +24,7 @@ def load_tokenizer(model_name=BASE_MODEL) -> PreTrainedTokenizerBase:
     return tokenizer
 
 
-def load_model(model_name=BASE_MODEL) -> _BaseModelWithGenerate:
+def load_model(model_name=BASE_MODEL) -> PreTrainedModel:
     print("\n[2/8] Configuring 8-bit quantization...")
     bnb_config = BitsAndBytesConfig(
         load_in_8bit=True,
@@ -44,7 +43,8 @@ def load_model(model_name=BASE_MODEL) -> _BaseModelWithGenerate:
 
     return model
 
-def lora_config_for(model: _BaseModelWithGenerate, pretrained_path: Optional[str] = None) -> PeftModel | PeftMixedModel:
+
+def lora_config_for(model: PreTrainedModel, pretrained_path: Optional[str] = None) -> PeftModel | PeftMixedModel:
     was_pretrained = pretrained_path is not None
 
     print("\n[4/8] Preparing model for QLoRA...")
@@ -67,7 +67,7 @@ def lora_config_for(model: _BaseModelWithGenerate, pretrained_path: Optional[str
     # (Optional but recommended) disable cache during training
     model.config.use_cache = False
 
-    if was_pretained:
+    if was_pretrained:
         return model
 
     # Configure LoRA
@@ -94,15 +94,15 @@ def lora_config_for(model: _BaseModelWithGenerate, pretrained_path: Optional[str
     return model
 
 
-
 # max token limit for the custom dataset
 TOKEN_LIMIT_FOR_CS = 10_000
 
 
 # helper function to tokenize our input and also apply LLaMA chat template
-def apply_formatter(_tokenizer: PreTrainedTokenizerBase, token_limit: Optional[int] = 4096):
-    def format_and_tokenize(tokenizer: PreTrainedTokenizerBase, example: dict, force: Optional[int] = 4096) -> Callable[
-        [dict], BatchEncoding]:
+def apply_formatter(_tokenizer: PreTrainedTokenizerBase, token_limit: Optional[int] = 4096) -> Callable[
+    [dict], BatchEncoding]:
+    def format_and_tokenize(tokenizer: PreTrainedTokenizerBase, example: dict,
+                            force: Optional[int] = 4096) -> BatchEncoding:
         # Apply LLaMA chat template
         formatted_text = tokenizer.apply_chat_template(
             example["messages"],
