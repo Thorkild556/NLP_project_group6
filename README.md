@@ -36,4 +36,5 @@ Thorkild contributed with how the system should be designed in order to achieve 
 #### Rahul
 Rahul contributed with building the pipeline for extracting the custom dataset (from youtube) and also generating the summaries from azure foundry's gpt 5.1 agent. co-wrote the code for finetuning the models with Thorkild, and also wrote code to generate the output from the fine-tuned models with the samples we have. Rahul also handled refracting of our code, re-arranging files in our project as well as handle any cloud based execution tasks along with Jolin.
 
-#### Jolin
+#### Zhuolin "Jolin" Li
+Jolin contributed with exploratory data analysis and basic visualization. She helped spot check the custom dataset formatting. She also participated in training and testing the models helped identify issues during experimentation, and assisted with workflow adjustments. In addition, she wrote the introduction and motivation section of the report, and reviewed related literature. She also supported the team with shared Colab coordination and cloud-based execution tasks.
