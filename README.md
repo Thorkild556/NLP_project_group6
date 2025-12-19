@@ -22,7 +22,7 @@ To achieve the goal framework, we will be using a pretrained model (Llama 3.2, 3
 Using the custom additional dataset, we want to further finetune our summary model. This will make the model more specific for our task. This way we have created the main model that our framwork is build upon.
 
 ### Model evaluation
-Model evaluation will be done on a seperate test sample of the dataset that we created as it is the only dataset that has the seq2seq properties that we want the model to have. The evaluation metrics used will be BERT score between the actual generation of the model and the wanted text generation as defined by either us or the larger model as described in the "aditional dataset section". We will be using BERT score instead of classical measures since we do not neccesarily care about whether the exact text is the same but whether the semantic meaning of the generation is close to the message we want the model to generate. 
+Model evaluation will be done on a seperate test sample of the dataset that we created as it is the only dataset that has the seq2seq properties that we want the model to have. The evaluation metrics used will be BERT score between the actual generation of the model and the wanted text generation as defined by either us or the larger model as described in the "additional dataset section". We will be using BERT score instead of classical measures since we do not neccesarily care about whether the exact text is the same but whether the semantic meaning of the generation is close to the message we want the model to generate. 
 
 ## A summary of the updates/changes since P2
 
@@ -34,5 +34,6 @@ Instead of using the raw TL;DR we decided to make a version that is closer allig
 Thorkild contributed with how the system should be designed in order to achieve the goal we set out to do. He wrote the code for the preprocessing and formatting of the TL;DR data as well as the final analysis and evaluation of the models. He co-wrote the code for model finetuning together with Rahul. Thorkild also wrote everything in the report, as well as the apendix equations, except for the introduction and motivation. However, everyone read the paper through.
 
 #### Rahul
+Rahul contributed with building the pipeline for extracting the custom dataset (from youtube) and also generating the summaries from azure foundry's gpt 5.1 agent. co-wrote the code for finetuning the models with Thorkild, and also wrote code to generate the output from the fine-tuned models with the samples we have. Rahul also handled refracting of our code, re-arranging files in our project as well as handle any cloud based execution tasks along with Jolin.
 
 #### Jolin
