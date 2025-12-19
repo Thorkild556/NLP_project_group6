@@ -1,7 +1,8 @@
-from azure.identity import DefaultAzureCredential
-from azure.ai.projects import AIProjectClient
-from dotenv import load_dotenv
 from os import getenv
+
+from azure.ai.projects import AIProjectClient
+from azure.identity import DefaultAzureCredential
+from dotenv import load_dotenv
 from loguru import logger
 from openai import OpenAI
 from openai.types.responses import Response
@@ -31,6 +32,7 @@ class OpenAIClient:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        # making sure the connections are closed once done
         self.openai_client.close()
         self.project_client.close()
 
@@ -46,6 +48,7 @@ class OpenAIClient:
         return response.output_text
 
 
+# for testing
 if __name__ == "__main__":
     with OpenAIClient() as client:
         print(client.ask("Tell me what you can help with."))

@@ -1,8 +1,9 @@
-from transformers import PreTrainedTokenizerBase, PreTrainedModel
-from peft import PeftModel, PeftMixedModel
 from typing import List, Tuple
-from datasets import Dataset
+
 import torch
+from datasets import Dataset
+from peft import PeftModel, PeftMixedModel
+from transformers import PreTrainedTokenizerBase, PreTrainedModel
 
 
 def linearly_infer_from(model: PreTrainedModel, tokenizer: PreTrainedTokenizerBase, sample_results: Dataset) -> List[

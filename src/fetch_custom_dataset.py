@@ -1,35 +1,62 @@
-import pandas as pd
-from dotenv import load_dotenv
-from urllib.parse import urlparse
-from urllib.parse import parse_qs
-from os import getenv
-from requests.models import PreparedRequest
-from requests import get
-from time import sleep
 from concurrent.futures import ThreadPoolExecutor
-from youtube_transcript_api import YouTubeTranscriptApi
-from loguru import logger
-from yt_dlp import YoutubeDL
-from threading import Lock
-from tempfile import TemporaryDirectory
 from json import load
-from sqlite3 import connect
+from os import getenv
 from pathlib import Path
+from sqlite3 import connect
+from tempfile import TemporaryDirectory
+from threading import Lock
+from time import sleep
+from typing import List, TypedDict, Optional
+from urllib.parse import parse_qs
+from urllib.parse import urlparse
+from warnings import deprecated
+
+import pandas as pd
 import scrapetube
+from dotenv import load_dotenv
+from loguru import logger
+from requests import get
+from requests.models import PreparedRequest
+from youtube_transcript_api import YouTubeTranscriptApi
+from yt_dlp import YoutubeDL
 
 load_dotenv()
 
 
-def raw_data_to_single_text(raw_data):
+class TranscriptRecord(TypedDict):
+    duration: float
+    start: float
+    text: str
+
+
+def raw_data_to_single_text(raw_data: str) -> str:
+    """
+    multi-line text to single line
+    :param raw_data: raw text
+    :return: single line text
+    """
     texts = "".join(i.replace("\n", " ") + " \n" for i in raw_data)
     return "POST: " + texts
 
 
-def format_df(title, raw_data):
+def format_df(title: str, raw_data: str) -> str:
     return "TITLE: " + title + "\n\n" + raw_data_to_single_text(raw_data)
 
 
 class ExtractVideos:
+    """
+    In this Pipeline we search for a prompt in YouTube and then fetch its transcripts cautiously
+    without getting rate-limited
+
+    we use the set of queries generated (data/queries.txt)
+
+    we have two sequential tasks, each task does things parallely with multiple threads
+    1. fetch video results from search query
+    2. fetch the transcripts from the videos we collected so far.
+
+
+    for transcripts, it requires the cookies file collected from logged in browser
+    """
     api_key = getenv('API_KEY')
     data = Path(__file__).parent.parent / "data"
     url = 'https://www.googleapis.com/youtube/v3/search'
@@ -44,6 +71,10 @@ class ExtractVideos:
         self.transcript_api = YouTubeTranscriptApi()
 
     def __enter__(self):
+        """
+        when the context starts we read from the queries and save them to sqlite for batching
+        :return:
+        """
         file = self.data / "queries.txt"
         _p = []
         for prompt in file.read_text().split(","):
@@ -61,12 +92,25 @@ class ExtractVideos:
         return {"key": self.api_key, **params}
 
     @classmethod
-    def get_video_key(cls, p_url):
+    def get_video_key(cls, p_url: str) -> str:
+        """
+        get video key from the url
+        :param p_url: video url
+        :return: video key
+        """
         parsed_url = urlparse(p_url)
         captured_value = parse_qs(parsed_url.query)['v'][0]
         return captured_value
 
-    def extract_prompt(self, prompt):
+    @deprecated("We would not be using this function anymore, as there's more convenient option: extract_prompts")
+    def extract_prompt(self, prompt: str):
+        """
+        returns top 4 video results from search query and saves the video details (title, video_key)
+        from YouTube data API
+
+        :param prompt: YouTube search query
+        :return:
+        """
         with connect(str(self.db_path)) as conn:
             params = self.add_key({
                 'q': prompt,
@@ -98,16 +142,24 @@ class ExtractVideos:
                 logger.exception("Failed to fetch the request: {} due to {}", prompt, error)
                 return
 
-    def extract_prompt_through_scraping(self, prompt):
+    def extract_prompt_through_scraping(self, search_query: str):
+        """
+        we use scrape tube for asking it to return top videos returned by video
+        after searching it with the query
+        extracting the video details which includes
+        title and video id, video_id is required for extracting the transcript
+        :param search_query: search query
+        :return:
+        """
         rows = []
         with connect(str(self.db_path)) as conn:
             try:
-                for i, video in enumerate(scrapetube.get_search(prompt)):
+                for i, video in enumerate(scrapetube.get_search(search_query)):
                     if i >= self.videos_per_prompt:
                         break
                     title = video.get('title', {}).get('runs', [{}])[0].get('text', 'No title')
                     video_id = video['videoId']
-                    rows.append((prompt, video_id, title))
+                    rows.append((search_query, video_id, title))
 
                 with self.lock:
                     frame = pd.DataFrame(rows, columns=self.cols)
@@ -115,28 +167,46 @@ class ExtractVideos:
                     frame["has_subs"] = True
                     frame["transcript"] = ''
                     frame.to_sql("Videos", conn, if_exists="append", index=False)
-                    logger.info("Fetched {} videos for the prompt: {}", len(rows), prompt)
-                    conn.execute(f'UPDATE Prompts SET fetched = TRUE where prompt = "{prompt}"')
+                    logger.info("Fetched {} videos for the prompt: {}", len(rows), search_query)
+                    conn.execute(f'UPDATE Prompts SET fetched = TRUE where prompt = "{search_query}"')
                     conn.commit()
 
             except Exception as error:
-                logger.exception("Failed to fetch the request: {} due to {}", prompt, error)
+                logger.exception("Failed to fetch the request: {} due to {}", search_query, error)
                 return
 
     def extract_prompts(self):
+        """
+        we then use the batch from sqlite and spawn max. 6 threads at once
+        to fetch the video results from search query and for each video we then extract its details and then save it in our sqlite db
+        :return:
+        """
         with ThreadPoolExecutor(max_workers=6) as executor:
             for request in self.requests:
                 executor.submit(self.extract_prompt_through_scraping, request)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        when the context ends we close the sqlite connection
+        :param exc_type:
+        :param exc_val:
+        :param exc_tb:
+        :return:
+        """
         self.connection.close()
 
-    def fetch_transcript_yt_dlp(self, v_k):
+    def fetch_transcript_yt_dlp(self, v_k: str) -> List[TranscriptRecord]:
+        """
+        fetches the transcript for a video given its video key from YouTube DLL Lib.
+        :param v_k: video_key
+        :return: transcript for video
+        """
         logger.info("Fetching the transcripts for video_key: {}", v_k)
+
         ydl_opts = {
-            "skip_download": True,
+            "skip_download": True,  # we don't need video
             "writesubtitles": True,
-            "subtitleslangs": ["en", "en-GB", "en-US"],
+            "subtitleslangs": ["en", "en-GB", "en-US"],  # we make sure to fetch only english videos
             "writeautomaticsub": True,
             "cookiefile": str(self.data / "cookies.txt"),
             "subtitlesformat": "json3",
@@ -176,7 +246,16 @@ class ExtractVideos:
                     })
             return transcript
 
-    def extract_transcripts(self, fallback=False, retries=3, base_wait=2):
+    def extract_transcripts(self, fallback: Optional[bool] = False, retries: Optional[int] = 3,
+                            base_wait: Optional[int] = 2):
+        """
+        we fetch the transcripts for the video details we collected so far sequentially with thread pool
+
+        :param fallback: if false we use DataAPI (downside: we easily get rate-limited) since we can only fetch approx. 100 videos per day, but we have ~3k videos to fetch.
+        :param retries: if failed try thrice (might fail due to rate-limit, if failed we wait more seconds before sending next request) default: 3
+        :param base_wait: waits for 2 secs min for every video request
+        :return:
+        """
         fallback = fallback or bool(getenv("FALLBACK"))
 
         self.requests = pd.read_sql(
@@ -196,6 +275,7 @@ class ExtractVideos:
                     else:
                         logger.error(
                             "We are resorting to the transcript youtube transcript API we are not recommended to spam this else we might get our IP banned")
+                        # we make sure to fetch only the english videos
                         value_to_save = self.transcript_api.fetch(v_k,
                                                                   languages=["en", "en-GB", "en-US", "en-CA", "en-IN",
                                                                              "en-AU", "en-NZ", "en-ZA",
@@ -210,10 +290,11 @@ class ExtractVideos:
                     formatted_text = format_df(title, frame.text.values)
 
                     query = """
-                        UPDATE Videos 
-                        SET transcript_fetched = TRUE, transcript = ?
-                        WHERE video_key = ?;
-                    """
+                            UPDATE Videos
+                            SET transcript_fetched = TRUE,
+                                transcript         = ?
+                            WHERE video_key = ?; \
+                            """
                     self.connection.execute(query, (formatted_text, v_k))
 
                     frame.to_sql(
@@ -230,9 +311,9 @@ class ExtractVideos:
                 except Exception as e:
                     if "Subtitles are disabled for this video" in str(e):
                         logger.warning("No subtitles available for {}, skipping.", v_k)
-                        self.connection.execute("""UPDATE Videos 
-                                           SET has_subs = FALSE
-                                           WHERE video_key = ?;""", (v_k, ))
+                        self.connection.execute("""UPDATE Videos
+                                                   SET has_subs = FALSE
+                                                   WHERE video_key = ?;""", (v_k,))
                         self.connection.commit()
                         break
 

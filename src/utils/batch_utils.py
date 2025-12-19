@@ -1,7 +1,8 @@
 from itertools import islice
-import pandas as pd
 from pathlib import Path
 from typing import List, Optional, Tuple, Generator, Any
+
+import pandas as pd
 
 
 def batched(iterable: List, n: int, *, strict: Optional[bool] = False) -> Generator[Tuple[Any]]:

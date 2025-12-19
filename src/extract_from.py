@@ -1,4 +1,4 @@
-from typing import TypedDict, List, Literal, Any
+from typing import TypedDict, List, Literal
 
 
 class MessageRole(TypedDict):
@@ -11,6 +11,14 @@ class Messages(TypedDict):
 
 
 def msg_for_base_model(_msg: Messages) -> Messages:
+    """
+    generates the prompt for the base model
+    for every YouTube Video Results from Custom Dataset we clearly lay out instructions under system role
+    since base model was not fine-tuned before
+
+    :param _msg: List of Messages
+    :return: Same List of Responses with the modified system instructions
+    """
     messages = _msg["messages"]
     return {
         "messages": [
@@ -63,7 +71,13 @@ That's the Example, please make sure to follow these rules as well.
         ]
     }
 
-def non_assistant_messages(_msg):
+
+def non_assistant_messages(_msg: Messages) -> Messages:
+    """
+    removes just the assistant messages from the messages provided and nothing else
+    :param _msg: List of Messages from the Custom Dataset file
+    :return: same list of messages but without assistant message
+    """
     messages = _msg["messages"]
     return {
         "messages": messages[: 2]
