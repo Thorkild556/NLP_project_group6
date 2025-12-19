@@ -333,6 +333,7 @@ class ExtractVideos:
         return is_not_done
 
 
+# starts the pipeline
 if __name__ == "__main__":
     with ExtractVideos() as extractor:
         extractor.extract_prompts()

@@ -8,6 +8,7 @@ import pandas as pd
 from src.utils.ask_llm import OpenAIClient
 from src.utils.batch_utils import batched, fill_prompt, data_folder
 
+
 class FillSummary(OpenAIClient):
     """
     FillSummary is a data pipeline where we utlize the threads to multi-request foundry's agent API
@@ -85,7 +86,7 @@ class FillSummary(OpenAIClient):
         self.save_this.clear()
 
 
-#
+# starts the pipeline
 if __name__ == "__main__":
     with FillSummary() as filler:
         filler.fetch()
