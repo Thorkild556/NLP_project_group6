@@ -10,6 +10,10 @@ load_dotenv()
 
 
 class OpenAIClient:
+    """
+    Client to Contact OpenAI we deployed in Azure Foundry Agents
+    to respond when prompted with a query, it has already pre-instructed to summarize YouTube videos when provided
+    """
     openai_client: OpenAI
 
     def __init__(self):
