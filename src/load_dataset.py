@@ -26,13 +26,24 @@ def load_jsonl(file_path: Union[str, Path]) -> Dataset:
     return dataset
 
 
-def split(dataset: Dataset) -> DatasetDict:
+def split_90_and_10(dataset: Dataset) -> DatasetDict:
+    """
+    splits the dataset so that we have 90% for training and 10% for validation
+    note we are also seeding the results (42) so that we can re-use the results for evalution
+    :param dataset: dataset object
+    :return: DatasetDict
+    """
     _split = dataset.train_test_split(test_size=0.1, seed=42)
     print(f"✓ Train: {len(_split['train'])} | Val: {len(_split['test'])}")
     return _split
 
 
 def print_sample(train_dataset) -> None:
+    """
+    prints the sample from train dataset
+    :param train_dataset: train_dataset
+    :return:
+    """
     # Show sample stats (pre-training)
     sample = train_dataset[0]
 
@@ -47,6 +58,13 @@ TL_DR_JSON = "proc_tldr.jsonl"
 
 
 def plt_tokens_for_dataset(tokenized_custom_dataset: Dataset, limit: int):
+    """
+    plots the token lengths in scatter plot (red - crossed limit else blue)
+    marks
+    :param tokenized_custom_dataset: custom dataset (after tokenization)
+    :param limit: marks red which crosses this limit
+    :return:
+    """
     sie = []
     note = []
 
