@@ -67,7 +67,7 @@ class Prepends:
             preps.append(self.get_random_prepend(i+1))
         return preps
 
-
+# aim of this file is to prepare the template prefix for the tl;dr clustered response
 if __name__ == "__main__":
     prep = Prepends()
 
